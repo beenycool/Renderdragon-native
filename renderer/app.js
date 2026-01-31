@@ -188,7 +188,12 @@ function createAssetTile(asset) {
           <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path>
           <circle cx="12" cy="12" r="3"></circle>
         </svg>
-        Preview
+      </button>
+      <button class="action-btn copy-btn" title="Copy to Clipboard">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+          <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+        </svg>
       </button>
       <button class="action-btn download-btn" title="Download">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -196,18 +201,23 @@ function createAssetTile(asset) {
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" x2="12" y1="15" y2="3"></line>
         </svg>
-        Download
       </button>
     </div>
   `;
 
     // Event listeners
     const previewBtn = tile.querySelector('.preview-btn');
+    const copyBtn = tile.querySelector('.copy-btn');
     const downloadBtn = tile.querySelector('.download-btn');
 
     previewBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         showPreview(asset);
+    });
+
+    copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyAsset(asset);
     });
 
     downloadBtn.addEventListener('click', (e) => {
@@ -458,6 +468,35 @@ async function downloadAsset(asset) {
         }
     } catch (error) {
         console.error('Download error:', error);
+    }
+}
+
+// ===== Copy to Clipboard =====
+async function copyAsset(asset) {
+    try {
+        // Show loading state
+        const btn = document.querySelector(`[data-id="${asset.id}"] .copy-btn`);
+        if (btn) {
+            btn.classList.add('loading');
+        }
+
+        const result = await window.api.copyToClipboard(asset.url, asset.filename, asset.ext);
+
+        if (btn) {
+            btn.classList.remove('loading');
+            if (result.success) {
+                btn.classList.add('success');
+                setTimeout(() => btn.classList.remove('success'), 1500);
+            }
+        }
+
+        if (result.success) {
+            console.log('Copied to clipboard:', result.type);
+        } else {
+            console.error('Copy failed:', result.message);
+        }
+    } catch (error) {
+        console.error('Copy error:', error);
     }
 }
 

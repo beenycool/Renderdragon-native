@@ -316,13 +316,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
     padding: 8px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     color: var(--text-secondary);
-    font-size: 11px;
     cursor: pointer;
     transition: all var(--transition-fast);
 }
@@ -330,6 +328,26 @@ body {
 .action-btn:hover {
     background: var(--accent-primary);
     border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.action-btn.copy-btn:hover {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.action-btn.copy-btn.loading {
+    background: var(--bg-tertiary);
+    pointer-events: none;
+}
+
+.action-btn.copy-btn.loading svg {
+    animation: spin 1s linear infinite;
+}
+
+.action-btn.copy-btn.success {
+    background: var(--success);
+    border-color: var(--success);
     color: var(--text-primary);
 }
 
