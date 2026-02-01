@@ -30,7 +30,10 @@ function cleanTempDir() {
 }
 
 function sanitizeFilename(filename) {
-    return filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const base = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const ext = path.extname(base);
+    const name = path.basename(base, ext);
+    return `${name}_${Date.now()}${ext}`;
 }
 
 function createWindow() {
@@ -110,8 +113,9 @@ function downloadToFile(url, filepath, options = {}) {
                 receivedBytes += chunk.length;
                 if (receivedBytes > maxSizeBytes) {
                     response.destroy();
-                    file.close();
-                    fs.unlink(filepath, () => {});
+                    file.close(() => {
+                        fs.unlink(filepath, () => {});
+                    });
                     reject(new Error(`File size exceeds limit of ${maxSizeBytes} bytes`));
                 }
             });
@@ -162,7 +166,7 @@ function copyFileToClipboard(filePath) {
             `;
             // Encode command to avoid issues with special characters
             const encodedCommand = Buffer.from(psScript, 'utf16le').toString('base64');
-            exec(`powershell -EncodedCommand ${encodedCommand}`, (error) => {
+            exec(`powershell -EncodedCommand ${encodedCommand}`, { timeout: 10000 }, (error) => {
                 if (error) {
                     console.error('PowerShell error:', error);
                     resolve({ success: false, message: error.message });
@@ -175,7 +179,7 @@ function copyFileToClipboard(filePath) {
             // Use AppleScript to set clipboard to POSIX file
             const safePath = filePath.replace(/"/g, '\\"');
             const script = `set the clipboard to POSIX file "${safePath}"`;
-            exec(`osascript -e '${script}'`, (error) => {
+            exec(`osascript -e '${script}'`, { timeout: 10000 }, (error) => {
                 if (error) {
                     resolve({ success: false, message: error.message });
                 } else {
@@ -185,12 +189,12 @@ function copyFileToClipboard(filePath) {
         } else {
             // Linux and others - Try to set text/uri-list
             try {
-                // Write to clipboard as text/uri-list
+                // Write to clipboard as text/uri-list and plain text together
                 const uriList = Buffer.from(`file://${filePath}\r\n`);
-                clipboard.writeBuffer('text/uri-list', uriList);
-
-                // Also write plain text path as fallback
-                clipboard.writeText(filePath);
+                clipboard.write({
+                    'text/uri-list': uriList,
+                    text: filePath
+                });
 
                 resolve({ success: true, type: 'file', path: filePath });
             } catch (err) {

@@ -574,7 +574,7 @@ function setupEventListeners() {
             case 'Enter':
                 if (focusedIndex >= 0 && tiles[focusedIndex]) {
                     const assetId = tiles[focusedIndex].dataset.id;
-                    const asset = filteredAssets.find(a => a.id == assetId);
+                    const asset = filteredAssets.find(a => String(a.id) === assetId);
                     if (asset) showPreview(asset);
                     e.preventDefault();
                 }
@@ -584,7 +584,7 @@ function setupEventListeners() {
                 if (e.ctrlKey || e.metaKey) {
                     if (focusedIndex >= 0 && tiles[focusedIndex]) {
                         const assetId = tiles[focusedIndex].dataset.id;
-                        const asset = filteredAssets.find(a => a.id == assetId);
+                        const asset = filteredAssets.find(a => String(a.id) === assetId);
                         if (asset) copyAsset(asset);
                         e.preventDefault();
                     }
@@ -597,7 +597,7 @@ function setupEventListeners() {
                 if (e.ctrlKey || e.metaKey) {
                     if (focusedIndex >= 0 && tiles[focusedIndex]) {
                         const assetId = tiles[focusedIndex].dataset.id;
-                        const asset = filteredAssets.find(a => a.id == assetId);
+                        const asset = filteredAssets.find(a => String(a.id) === assetId);
                         if (asset) downloadAsset(asset);
                         e.preventDefault();
                     }
