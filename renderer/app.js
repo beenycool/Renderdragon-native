@@ -20,6 +20,7 @@ let displayedCount = 0;
 let currentCategory = 'all';
 let isLoading = false;
 let searchTimeout = null;
+let focusedIndex = -1;
 
 // ===== DOM Elements =====
 const searchInput = document.getElementById('searchInput');
@@ -108,6 +109,7 @@ function filterAssets() {
 
     // Reset and render
     displayedCount = 0;
+    focusedIndex = -1;
     assetsGrid.innerHTML = '';
     loadMoreAssets();
 
@@ -515,14 +517,92 @@ function setupEventListeners() {
         window.api.hideWindow();
     });
 
-    // Escape key
+    // Keyboard navigation
     document.addEventListener('keydown', (e) => {
+        // Handle Escape first
         if (e.key === 'Escape') {
             if (previewModal.classList.contains('active')) {
                 hidePreview();
             } else {
                 window.api.hideWindow();
             }
+            return;
+        }
+
+        // If searching, allow ArrowDown/Enter to jump to results
+        if (document.activeElement === searchInput) {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                if (assetsGrid.children.length > 0) {
+                    searchInput.blur();
+                    focusedIndex = 0;
+                    updateSelection();
+                    e.preventDefault();
+                }
+            }
+            return;
+        }
+
+        const tiles = assetsGrid.children;
+        if (tiles.length === 0) return;
+
+        // If modal is open, ignore nav
+        if (previewModal.classList.contains('active')) return;
+
+        const cols = getColumnsCount();
+
+        switch (e.key) {
+            case 'ArrowRight':
+                focusedIndex = Math.min(focusedIndex + 1, tiles.length - 1);
+                updateSelection();
+                e.preventDefault();
+                break;
+            case 'ArrowLeft':
+                focusedIndex = Math.max(focusedIndex - 1, 0);
+                updateSelection();
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+                focusedIndex = Math.min(focusedIndex + cols, tiles.length - 1);
+                updateSelection();
+                e.preventDefault();
+                break;
+            case 'ArrowUp':
+                focusedIndex = Math.max(focusedIndex - cols, 0);
+                updateSelection();
+                e.preventDefault();
+                break;
+            case 'Enter':
+                if (focusedIndex >= 0 && tiles[focusedIndex]) {
+                    const assetId = tiles[focusedIndex].dataset.id;
+                    const asset = filteredAssets.find(a => String(a.id) === assetId);
+                    if (asset) showPreview(asset);
+                    e.preventDefault();
+                }
+                break;
+            case 'c':
+            case 'C':
+                if (e.ctrlKey || e.metaKey) {
+                    if (focusedIndex >= 0 && tiles[focusedIndex]) {
+                        const assetId = tiles[focusedIndex].dataset.id;
+                        const asset = filteredAssets.find(a => String(a.id) === assetId);
+                        if (asset) copyAsset(asset);
+                        e.preventDefault();
+                    }
+                }
+                break;
+            case 's':
+            case 'S':
+            case 'd':
+            case 'D':
+                if (e.ctrlKey || e.metaKey) {
+                    if (focusedIndex >= 0 && tiles[focusedIndex]) {
+                        const assetId = tiles[focusedIndex].dataset.id;
+                        const asset = filteredAssets.find(a => String(a.id) === assetId);
+                        if (asset) downloadAsset(asset);
+                        e.preventDefault();
+                    }
+                }
+                break;
         }
     });
 
@@ -583,4 +663,29 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function updateSelection() {
+    const tiles = assetsGrid.children;
+    for (let i = 0; i < tiles.length; i++) {
+        const tile = tiles[i];
+        if (i === focusedIndex) {
+            tile.classList.add('selected');
+            tile.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            tile.classList.remove('selected');
+        }
+    }
+}
+
+function getColumnsCount() {
+    const tiles = assetsGrid.children;
+    if (tiles.length < 2) return 1;
+    const firstTop = tiles[0].offsetTop;
+    let cols = 0;
+    for (let i = 0; i < tiles.length; i++) {
+        if (tiles[i].offsetTop > firstTop) break;
+        cols++;
+    }
+    return cols || 1;
 }
